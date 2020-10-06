@@ -4,6 +4,10 @@ import {
   CloseTagType,
   CommentDelimiterType,
   CurlyBracketType,
+  OpenTagType,
+  RoundBracketType,
+  SquareBracketType,
+  StringDelimiterType,
   IsAngleBracket,
   IsCharDelimiter,
   IsCloseTag,
@@ -13,10 +17,6 @@ import {
   IsRoundBracket,
   IsSquareBracket,
   IsStringDelimiter,
-  OpenTagType,
-  RoundBracketType,
-  SquareBracketType,
-  StringDelimiterType,
 } from './parenthesis';
 
 export type OpenTag = typeof OpenTagType;
@@ -40,7 +40,10 @@ export interface Parenthesis {
   begin: number;
   end?: number;
   children?: Parenthesis[];
-  segment: string;
+  segment?: string;
+  raw: string;
+  left?: string;
+  right?: string;
 }
 
 export {
@@ -53,5 +56,5 @@ export {
   IsRoundBracket,
   IsSquareBracket,
   IsStringDelimiter,
-  IsTag
+  IsTag,
 };

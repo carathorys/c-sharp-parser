@@ -1,4 +1,3 @@
-export * from './keyword.typeguards';
-export * from './keyword.types';
+export * from './keywords';
 export * from './parenthesis.types';
 export * from './parenthesis';

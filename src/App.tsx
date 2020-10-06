@@ -1,11 +1,13 @@
 import React from 'react';
 
-import { findClosingTag } from './parser'
+import { parse } from './parser'
 
 function App() {
+  const str = "public async Task<boolean> MyClass<TKey, TValue>(ref Dictionary<int, double> parameter) { }";
   return (
     <div className="App">
-      {JSON.stringify(findClosingTag("public static class MyClass<TKey, TValue<MyClass>> { }", 27, '<'))}
+      {str}
+      <pre>{JSON.stringify(parse(str), undefined, 2)}</pre>
     </div>
   );
 }
