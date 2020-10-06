@@ -1,82 +1,91 @@
-import {
-  CloseTag,
-  CloseTags,
-  OpenTags,
-  IsCloseTag,
-  IsOpenTag,
-  OpenTag,
-  Parenthesis,
-} from '../data';
+import { CloseTag, CloseTags, OpenTags, IsCloseTag, IsOpenTag, OpenTag } from '../data';
 
-export const findClosingTag = (str: string, index: number, tag: OpenTag): Parenthesis => {
-  let pos = index + 1;
-  let closeTag = CloseTags[OpenTags.indexOf(tag)] as CloseTag;
-  let children: Parenthesis[] = [];
-  while (pos < str.length) {
-    const char = str.charAt(pos);
-    if (IsOpenTag(char)) {
-      const tmp = findClosingTag(str.substring(pos + 1), pos, char);
-      children.push(tmp);
-      if (tmp.end !== undefined) {
-        pos = tmp.end;
-        continue;
-      } else {
-        break;
-      }
-    } else if (IsCloseTag(char) && char === closeTag) {
-      pos++;
-      return {
-        open: tag,
-        close: char,
-        begin: index + 1,
-        raw: str,
-        end: pos - 1,
-        segment: str.substring(index + 1, pos - 1),
-        children: children,
-      };
-    }
-    pos++;
+class Parenthesis {
+  private segment: string;
+  constructor(
+    source: string,
+    public readonly begin: number,
+    public readonly open: OpenTag,
+    public readonly close: CloseTag,
+    public readonly end?: number,
+    public readonly children?: Parenthesis[],
+  ) {
+    this.segment = source.substring(begin, end);
   }
-  return {
-    open: tag,
-    close: closeTag,
-    begin: index,
-    raw: str,
-    segment: str.substring(index, pos),
-    children: children,
-  };
-};
 
-// export const searchParenthesis = (str: string, start: number, stop: number): Parenthesis | null => {
-//   const firstSpace = str.indexOf(' ');
-//   const foundTags = OpenTags.filter((x) => {
-//     const firstIndexOf = str.indexOf(x, start);
-//     return firstIndexOf >= 0 && firstIndexOf < firstSpace;
-//   });
+  get Rendered(): string {
+    return `${this.open}${this.segment}${this.close}`;
+  }
+}
 
-//   if (foundTags.length <= 0) {
-//     return null;
-//   }
-//   let parenthesis: Parenthesis | null = null;
-//   foundTags.forEach((tag) => {
-//     const pOpen = str.indexOf(tag);
-//     if (pOpen > stop) return;
-//     const tmp = findClosingTag(str, pOpen, tag);
-//     if (!parenthesis || parenthesis.begin > tmp.begin) {
-//       parenthesis = tmp;
-//     }
-//   });
-//   return parenthesis;
-// };
+export class Parser {
+  private readonly parenthesises: Parenthesis[] = [];
+  private readonly knownSeparators = [', ', ' ', ',', '\n'] as const;
 
-const findFirstSeparator = (str: string) => {};
+  constructor(private readonly str: string) {
+    this.searchParenthesis();
+  }
+
+  private searchSeparator(): { separator: string; pos: number } {
+    let separator = ' ';
+    let pos = -1;
+
+    this.knownSeparators.forEach((s) => {
+      const firstIndex = this.str.indexOf(s);
+      if (firstIndex >= 0 && (firstIndex < pos || pos === -1)) {
+        separator = s;
+        pos = firstIndex;
+      }
+    });
+    return { separator, pos };
+  }
+
+  private addParenthesis(p: Parenthesis) {
+    if (this.parenthesises.filter((x) => x.begin === p.begin).length <= 0) {
+      this.parenthesises.push(p);
+    }
+  }
+
+  private findClosingTag(index: number, tag: OpenTag): number | undefined {
+    let pos = index + 1;
+    let closeTag = CloseTags[OpenTags.indexOf(tag)] as CloseTag;
+    let children: Parenthesis[] = [];
+    while (pos < this.str.length) {
+      const char = this.str.charAt(pos);
+      if (IsOpenTag(char)) {
+        const tmp = this.findClosingTag(pos, char);
+
+        if (!!tmp) {
+          pos = tmp;
+          continue;
+        } else {
+          break;
+        }
+      } else if (IsCloseTag(char) && char === closeTag) {
+        pos++;
+        let current = new Parenthesis(this.str, index + 1, tag, char, pos - 1, children);
+        this.addParenthesis(current);
+        return pos;
+      }
+      pos++;
+    }
+    this.addParenthesis(new Parenthesis(this.str, index, tag, closeTag, undefined, children));
+    return undefined;
+  }
+
+  private searchParenthesis(): void {
+    OpenTags.forEach((tag) => {
+      let lastIndexOfFoundTag = this.str.indexOf(tag);
+
+      while (lastIndexOfFoundTag > 0) {
+        this.findClosingTag(lastIndexOfFoundTag, tag);
+        lastIndexOfFoundTag = this.str.indexOf(tag, lastIndexOfFoundTag + 1);
+      }
+    });
+  }
+}
 
 export const parse = (str: string) => {
-  let output = '';
-  let p = 0;
-  while (str.length > p) {
-    let separator = ' ';
-    let pos = str.indexOf(separator);
-    let current = str.substring(0, pos);
-  }
+  const p = new Parser(str);
+  console.log(JSON.stringify(p));
 };

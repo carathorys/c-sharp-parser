@@ -34,6 +34,8 @@ export type CharDelimiter = typeof CharDelimiterType;
 export type CommentDelimiter = typeof CommentDelimiterType;
 export type StringDelimiter = typeof StringDelimiterType;
 
+
+
 export interface Parenthesis {
   open: OpenTag;
   close: CloseTag;
