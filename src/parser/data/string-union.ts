@@ -6,11 +6,15 @@ export const StringUnion = <UnionType extends string>(...values: UnionType[]) =>
   Object.freeze(values);
   const valueSet: Set<string> = new Set(values);
 
-  const guard = (value: string): value is UnionType => {
+  /**
+   * @description Validates if the incoming data is one of the given values
+   * @param {any} value value to check
+   */
+  const guard = (value: any): value is UnionType => {
     return valueSet.has(value);
   };
 
-  const check = (value: string): UnionType => {
+  const check = (value: any): UnionType => {
     if (!guard(value)) {
       const actual = JSON.stringify(value);
       const expected = values.map((s) => JSON.stringify(s)).join(' | ');

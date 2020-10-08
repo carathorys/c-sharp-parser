@@ -1,91 +1,108 @@
-import { CloseTag, CloseTags, OpenTags, IsCloseTag, IsOpenTag, OpenTag } from '../data';
-
-class Parenthesis {
-  private segment: string;
-  constructor(
-    source: string,
-    public readonly begin: number,
-    public readonly open: OpenTag,
-    public readonly close: CloseTag,
-    public readonly end?: number,
-    public readonly children?: Parenthesis[],
-  ) {
-    this.segment = source.substring(begin, end);
-  }
-
-  get Rendered(): string {
-    return `${this.open}${this.segment}${this.close}`;
-  }
-}
+import { CloseTag, CloseTags, OpenTags, IsCloseTag, IsOpenTag, OpenTag, IsAngleBracket, IsRoundBracket } from '../data';
+import { Word } from './word';
+import { CodeSegmentSeparator, IsSeparatorChar, SeparatorChar, SeparatorChars } from '../data/separator';
 
 export class Parser {
-  private readonly parenthesises: Parenthesis[] = [];
-  private readonly knownSeparators = [', ', ' ', ',', '\n'] as const;
+  private readonly str: string = '';
+  private words: Word[] = [];
 
-  constructor(private readonly str: string) {
-    this.searchParenthesis();
+  constructor(str: string) {
+    this.str = str.replace(/\s+/g, ' ').trim();
   }
 
-  private searchSeparator(): { separator: string; pos: number } {
-    let separator = ' ';
-    let pos = -1;
-
-    this.knownSeparators.forEach((s) => {
-      const firstIndex = this.str.indexOf(s);
-      if (firstIndex >= 0 && (firstIndex < pos || pos === -1)) {
-        separator = s;
-        pos = firstIndex;
+  parseFn(str: string, expectedEnd: string, begin?: number, end?: number): Word[] {
+    let lastPos = begin ?? 0;
+    let stop = end ?? str.length;
+    let parsedData: Word[] = [];
+    let lastWord: Word | null = null;
+    while (lastPos < stop) {
+      let { separator, pos } = getFirstSeparator(str, lastPos, stop) ?? {
+        separator: '\n',
+        pos: end,
+      };
+      let currentWord = new Word(lastPos, pos, str.substring(lastPos, pos), separator);
+      if (lastWord != null) {
+        lastWord.nextWord = currentWord;
+        currentWord.previousWord = lastWord;
       }
-    });
-    return { separator, pos };
-  }
-
-  private addParenthesis(p: Parenthesis) {
-    if (this.parenthesises.filter((x) => x.begin === p.begin).length <= 0) {
-      this.parenthesises.push(p);
-    }
-  }
-
-  private findClosingTag(index: number, tag: OpenTag): number | undefined {
-    let pos = index + 1;
-    let closeTag = CloseTags[OpenTags.indexOf(tag)] as CloseTag;
-    let children: Parenthesis[] = [];
-    while (pos < this.str.length) {
-      const char = this.str.charAt(pos);
-      if (IsOpenTag(char)) {
-        const tmp = this.findClosingTag(pos, char);
-
-        if (!!tmp) {
-          pos = tmp;
-          continue;
-        } else {
-          break;
+      if (IsOpenTag(separator)) {
+        let children = this.parseFn(str, CloseTags[OpenTags.indexOf(separator)], Math.min(str.length, pos + 1));
+        children[0].previousWord = currentWord;
+        currentWord.nextWord = children[0];
+        pos = children[children.length - 1].end;
+        parsedData = [...parsedData, currentWord, ...children];
+        lastWord = parsedData[parsedData.length - 1];
+        lastPos = pos + separator.length;
+      } else if (IsCloseTag(separator)) {
+        if (separator !== expectedEnd) {
+          console.error(`Unexpected closing tag: '${separator}' at ${pos};  "${expectedEnd}" was expected`);
+          return parsedData;
         }
-      } else if (IsCloseTag(char) && char === closeTag) {
-        pos++;
-        let current = new Parenthesis(this.str, index + 1, tag, char, pos - 1, children);
-        this.addParenthesis(current);
-        return pos;
+        parsedData.push(currentWord);
+        return parsedData;
+      } else {
+        lastWord = currentWord;
+        lastPos = pos + separator.length;
+        parsedData.push(currentWord);
       }
-      pos++;
     }
-    this.addParenthesis(new Parenthesis(this.str, index, tag, closeTag, undefined, children));
-    return undefined;
+
+    return parsedData;
   }
 
-  private searchParenthesis(): void {
-    OpenTags.forEach((tag) => {
-      let lastIndexOfFoundTag = this.str.indexOf(tag);
+  public startParse() {
+    this.words = [...this.parseFn(this.str, '')];
+  }
 
-      while (lastIndexOfFoundTag > 0) {
-        this.findClosingTag(lastIndexOfFoundTag, tag);
-        lastIndexOfFoundTag = this.str.indexOf(tag, lastIndexOfFoundTag + 1);
-      }
-    });
+  public toString(): string {
+    return this.words.map((x) => `${x}`).join('');
   }
 }
 
+export const getFirstSeparator = (str: string, begin: number, end: number): CodeSegmentSeparator | null => {
+  let separator: SeparatorChar;
+  let pos = -1;
+
+  SeparatorChars.forEach((s) => {
+    const firstIndex = str.indexOf(s, begin);
+    if (end > firstIndex && firstIndex > 0 && (firstIndex < pos || pos === -1)) {
+      separator = s;
+      pos = firstIndex;
+    }
+  });
+  return pos > 0 ? { separator, pos } : null;
+};
+
+function stringify(obj, replacer, spaces, cycleReplacer = null) {
+  return JSON.stringify(obj, serializer(replacer, cycleReplacer), spaces);
+}
+
+function serializer(replacer, cycleReplacer) {
+  var stack = [],
+    keys = [];
+
+  if (cycleReplacer == null)
+    cycleReplacer = function (key, value) {
+      if (key === 'previousWord' || key === 'nextWord') return '[Circular ~]';
+      if (stack[0] === value) return '[Circular ~]';
+      return '[Circular ~.' + keys.slice(0, stack.indexOf(value)).join('.') + ']';
+    };
+
+  return function (key, value) {
+    if (stack.length > 0) {
+      var thisPos = stack.indexOf(this);
+      ~thisPos ? stack.splice(thisPos + 1) : stack.push(this);
+      ~thisPos ? keys.splice(thisPos, Infinity, key) : keys.push(key);
+      if (~stack.indexOf(value)) value = cycleReplacer.call(this, key, value);
+    } else stack.push(value);
+
+    return replacer == null ? value : replacer.call(this, key, value);
+  };
+}
 export const parse = (str: string) => {
   const p = new Parser(str);
-  console.log(JSON.stringify(p));
+  p.startParse();
+  console.log(p.toString());
+  console.log(stringify(p, null, 2));
+  // p.parseString();
 };

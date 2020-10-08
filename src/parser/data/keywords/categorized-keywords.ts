@@ -34,7 +34,7 @@ import {
   TypeKeywordType,
 } from './categorized';
 
-export type CategorizedKeywordType =
+export type CategorizedKeyword =
   | typeof AccessKeywordType
   | typeof AccessModifierType
   | typeof ContextualKeywordType
@@ -47,7 +47,7 @@ export type CategorizedKeywordType =
   | typeof StatementKeywordType
   | typeof TypeKeywordType;
 
-export const IsCategorizedKeyword = (s: any): s is CategorizedKeywordType => {
+export const IsCategorizedKeyword = (s: any): s is CategorizedKeyword => {
   return (
     IsAccessKeyword(s) ||
     IsAccessModifier(s) ||

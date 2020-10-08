@@ -44,11 +44,20 @@ import {
   StatementKeywordType,
   TypeKeywordType,
 } from './categorized';
+
+import {
+  IsKnownKeyword,
+  KnownKeywords,
+  KnownKeywordType,
+  ValidateKnownKeyword,
+} from './all-known-keyword';
+
 export * from './categorized-keywords';
 export {
   AccessKeywords,
   AccessModifiers,
   ContextualKeywords,
+  KnownKeywords,
   LiteralKeywords,
   MethodParameterKeywords,
   ModifierKeywords,
@@ -60,6 +69,7 @@ export {
   IsAccessKeyword,
   IsAccessModifier,
   IsContextualKeyword,
+  IsKnownKeyword,
   IsLiteralKeyword,
   IsMethodParameterKeyword,
   IsModifierKeyword,
@@ -71,6 +81,7 @@ export {
   ValidateAccessKeyword,
   ValidateAccessModifier,
   ValidateContextualKeyword,
+  ValidateKnownKeyword,
   ValidateLiteralKeyword,
   ValidateMethodParameterKeyword,
   ValidateModifierKeyword,
@@ -84,6 +95,7 @@ export {
 export type AccessKeyword = typeof AccessKeywordType;
 export type AccessModifier = typeof AccessModifierType;
 export type ContextualKeyword = typeof ContextualKeywordType;
+export type KnownKeyword = typeof KnownKeywordType;
 export type LiteralKeyword = typeof LiteralKeywordType;
 export type MethodParameterKeyword = typeof MethodParameterKeywordType;
 export type ModifierKeyword = typeof ModifierKeywordType;

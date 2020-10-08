@@ -1,3 +1,4 @@
+import { ShorthandPropertyAssignment } from "typescript";
 import {
   AngleBracketType,
   CharDelimiterType,
@@ -17,7 +18,7 @@ import {
   IsRoundBracket,
   IsSquareBracket,
   IsStringDelimiter,
-} from './parenthesis';
+} from "./parenthesis";
 
 export type OpenTag = typeof OpenTagType;
 export type CloseTag = typeof CloseTagType;
@@ -33,20 +34,6 @@ export type SquareBracket = typeof SquareBracketType;
 export type CharDelimiter = typeof CharDelimiterType;
 export type CommentDelimiter = typeof CommentDelimiterType;
 export type StringDelimiter = typeof StringDelimiterType;
-
-
-
-export interface Parenthesis {
-  open: OpenTag;
-  close: CloseTag;
-  begin: number;
-  end?: number;
-  children?: Parenthesis[];
-  segment?: string;
-  raw: string;
-  left?: string;
-  right?: string;
-}
 
 export {
   IsAngleBracket,
